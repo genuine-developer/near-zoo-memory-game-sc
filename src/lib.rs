@@ -236,13 +236,15 @@ impl Contract {
 
         // Token se duoc gui vao contract
 
-        self.tokens.internal_transfer(
-            &env::predecessor_account_id(),
-            &env::current_account_id(), // dia chi contract
-            &auction_token,
-            None,
-            None,
-        );
+        if env::predecessor_account_id() != env::current_account_id() {
+            self.tokens.internal_transfer(
+                &env::predecessor_account_id(),
+                &env::current_account_id(), // dia chi contract
+                &auction_token,
+                None,
+                None,
+            );
+        }
 
         let mut auction_ids: Vector<u128>;
 
@@ -265,10 +267,10 @@ impl Contract {
             owner: owner_id,
             auction_id: self.total_auctions,
             auction_token: auction_token.clone(),
-            start_price,
+            start_price: start_price * 1_000_000,
             start_time: start_time,
             end_time: end_time,
-            current_price: start_price,
+            current_price: start_price * 1_000_000,
             winner: String::new(),
             is_near_claimed: false,
             is_nft_claimed: false,
@@ -408,8 +410,16 @@ impl Contract {
         self.auction_by_id.insert(&auction_id, &auction);
     }
 
-    pub fn get_auction(&mut self, auction_id: u128) -> Auction {
+    pub fn get_auction(&self, auction_id: u128) -> Auction {
         self.auction_by_id.get(&auction_id).unwrap()
+    }
+
+    pub fn get_auctioned_tokens(&self) -> Vec<TokenId> {
+        self.auctioned_tokens.to_vec()
+    }
+
+    pub fn get_total_auction_count(&self) -> u128 {
+        self.total_auctions
     }
 
     pub fn get_current_token_number(&self) -> u64 {
